@@ -121,6 +121,14 @@
                         'path' => $tempPath,
                         'name' => 'Invoice_' . $invoice->invoice_number . '.pdf',
                     ];
+
+                    // Automatically add the contact's email as a recipient
+                    $contactEmail = $invoice->contact->email;
+                    if (!in_array($contactEmail, $request->input('recipients'))) {
+                        $request->merge([
+                            'recipients' => array_merge($request->input('recipients'), [$contactEmail]),
+                        ]);
+                    }
                 }
             }
 
@@ -156,16 +164,12 @@
                 }
 
                 // Remove the invoice after sending if the checkbox was selected
-                if ($request->input('invoice_id') && $request->input('remove_after_send')) {
-                    $invoice->delete();
-                    Log::info('Invoice deleted after sending email.', ['invoice_id' => $invoice->id]);
-                }
 
                 Log::info('Email successfully sent and saved to database.');
-                return redirect()->back()->with('success', 'Email byl úspěšně odeslán.');
+                return redirect(url()->previousPath())->with('success', 'Email byl úspěšně odeslán.');
             } catch (\Exception $e) {
                 Log::error('Mail Sending Error:', ['error' => $e->getMessage()]);
-                return redirect()->back()->with('error', 'Při odesílání emailu došlo k chybě: ' . $e->getMessage());
+                return redirect(url()->previousPath())->with('error', 'Při odesílání emailu došlo k chybě: ' . $e->getMessage());
             }
         }
 

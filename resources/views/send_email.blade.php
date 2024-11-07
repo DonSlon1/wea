@@ -36,7 +36,7 @@
             <label for="recipients" class="form-label">Recipients</label>
             <select name="recipients[]" id="recipients" class="form-control select2" multiple required>
                 @foreach($contacts as $contact)
-                    <option value="{{ $contact->email }}" {{ (collect(old('recipients'))->contains($contact->email)) ? 'selected' : '' }}>
+                    <option value="{{ $contact->email }}" {{ ((collect(old('recipients'))->contains($contact->email)) || $contact->id == $invoice?->contact_id) ? 'selected' : '' }}>
                         {{ $contact->first_name }} {{ $contact->last_name }} ({{ $contact->email }})
                     </option>
                 @endforeach
@@ -58,7 +58,7 @@
         <!-- Body -->
         <div class="mb-3">
             <label for="body" class="form-label">Body</label>
-            <textarea name="body" class="form-control summernote" id="body" required>{{ old('body', 'Please find attached your invoice.') }}</textarea>
+            <textarea name="body" class="form-control summernote" id="body" required>{{ old('body', $invoice ? 'Please find attached your invoice.' : 'Please find attached your invoice.') }}</textarea>
             @error('body')
             <div class="text-danger">{{ $message }}</div>
             @enderror
@@ -67,7 +67,7 @@
         <!-- Alt Body -->
         <div class="mb-3">
             <label for="alt_body" class="form-label">Alt Body (optional)</label>
-            <textarea name="alt_body" class="form-control" id="alt_body">{{ old('alt_body', 'Please find attached your invoice.' ) }}</textarea>
+            <textarea name="alt_body" class="form-control" id="alt_body">{{ old('alt_body', $invoice ? 'Please find attached your invoice.' : 'Please find attached your invoice.' ) }}</textarea>
             @error('alt_body')
             <div class="text-danger">{{ $message }}</div>
             @enderror

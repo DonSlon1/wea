@@ -19,6 +19,20 @@
             <textarea name="description" class="form-control" id="description">{{ old('description', $invoice->description) }}</textarea>
         </div>
         <div class="mb-3">
+            <label for="contact_id" class="form-label">Contact</label>
+            <select name="contact_id" id="contact_id" class="form-control select2" required>
+                <option value="">Select Contact</option>
+                @foreach($contacts as $contact)
+                    <option value="{{ $contact->id }}" {{ old('contact_id', $invoice->contact_id) == $contact->id ? 'selected' : '' }}>
+                        {{ $contact->first_name }} {{ $contact->last_name }} ({{ $contact->email }})
+                    </option>
+                @endforeach
+            </select>
+            @error('contact_id')
+            <div class="text-danger">{{ $message }}</div>
+            @enderror
+        </div>
+        <div class="mb-3">
             <label for="pdf_template_id" class="form-label">PDF Template</label>
             <select name="pdf_template_id" id="pdf_template_id" class="form-control select2" required>
                 <option value="">Select Template</option>
@@ -39,54 +53,21 @@
             </tr>
             </thead>
             <tbody>
-            @if(old('items'))
-                @foreach(old('items') as $index => $item)
+            @if(old('items', $invoice->items))
+                @foreach(old('items', $invoice->items) as $index => $item)
                     <tr>
-                        <td>
-                            <input type="text" name="items[{{ $index }}][description]" class="form-control" value="{{ $item['description'] }}" required>
-                        </td>
-                        <td>
-                            <input type="number" name="items[{{ $index }}][quantity]" class="form-control quantity" min="1" value="{{ $item['quantity'] }}" required>
-                        </td>
-                        <td>
-                            <input type="number" step="0.01" name="items[{{ $index }}][unit_price]" class="form-control unit_price" min="0" value="{{ $item['unit_price'] }}" required>
-                        </td>
-                        <td>
-                            <button type="button" class="btn btn-danger btn-sm remove-item">Remove</button>
-                        </td>
-                    </tr>
-                @endforeach
-            @elseif($invoice->items->count())
-                @foreach($invoice->items as $index => $item)
-                    <tr>
-                        <td>
-                            <input type="text" name="items[{{ $index }}][description]" class="form-control" value="{{ $item->description }}" required>
-                        </td>
-                        <td>
-                            <input type="number" name="items[{{ $index }}][quantity]" class="form-control quantity" min="1" value="{{ $item->quantity }}" required>
-                        </td>
-                        <td>
-                            <input type="number" step="0.01" name="items[{{ $index }}][unit_price]" class="form-control unit_price" min="0" value="{{ $item->unit_price }}" required>
-                        </td>
-                        <td>
-                            <button type="button" class="btn btn-danger btn-sm remove-item">Remove</button>
-                        </td>
+                        <td><input type="text" name="items[{{ $index }}][description]" class="form-control" value="{{ $item['description'] ?? $item->description }}" required></td>
+                        <td><input type="number" name="items[{{ $index }}][quantity]" class="form-control" min="1" value="{{ $item['quantity'] ?? $item->quantity }}" required></td>
+                        <td><input type="number" step="0.01" name="items[{{ $index }}][unit_price]" class="form-control" min="0" value="{{ $item['unit_price'] ?? $item->unit_price }}" required></td>
+                        <td><button type="button" class="btn btn-danger btn-sm remove-item">Remove</button></td>
                     </tr>
                 @endforeach
             @else
                 <tr>
-                    <td>
-                        <input type="text" name="items[0][description]" class="form-control" required>
-                    </td>
-                    <td>
-                        <input type="number" name="items[0][quantity]" class="form-control quantity" min="1" value="1" required>
-                    </td>
-                    <td>
-                        <input type="number" step="0.01" name="items[0][unit_price]" class="form-control unit_price" min="0" value="0.00" required>
-                    </td>
-                    <td>
-                        <button type="button" class="btn btn-danger btn-sm remove-item">Remove</button>
-                    </td>
+                    <td><input type="text" name="items[0][description]" class="form-control" required></td>
+                    <td><input type="number" name="items[0][quantity]" class="form-control" min="1" value="1" required></td>
+                    <td><input type="number" step="0.01" name="items[0][unit_price]" class="form-control" min="0" value="0.00" required></td>
+                    <td><button type="button" class="btn btn-danger btn-sm remove-item">Remove</button></td>
                 </tr>
             @endif
             </tbody>
@@ -100,23 +81,17 @@
 @push('scripts')
     <script>
         $(document).ready(function(){
-            let itemIndex = {{ old('items') ? count(old('items')) : ($invoice->items->count() ?: 1) }};
+            $('.select2').select2();
+
+            let itemIndex = {{ old('items', $invoice->items) ? count(old('items', $invoice->items)) : 1 }};
 
             $('#add_item').click(function(){
                 let newRow = `
                 <tr>
-                    <td>
-                        <input type="text" name="items[${itemIndex}][description]" class="form-control" required>
-                    </td>
-                    <td>
-                        <input type="number" name="items[${itemIndex}][quantity]" class="form-control quantity" min="1" value="1" required>
-                    </td>
-                    <td>
-                        <input type="number" step="0.01" name="items[${itemIndex}][unit_price]" class="form-control unit_price" min="0" value="0.00" required>
-                    </td>
-                    <td>
-                        <button type="button" class="btn btn-danger btn-sm remove-item">Remove</button>
-                    </td>
+                    <td><input type="text" name="items[${itemIndex}][description]" class="form-control" required></td>
+                    <td><input type="number" name="items[${itemIndex}][quantity]" class="form-control" min="1" value="1" required></td>
+                    <td><input type="number" step="0.01" name="items[${itemIndex}][unit_price]" class="form-control" min="0" value="0.00" required></td>
+                    <td><button type="button" class="btn btn-danger btn-sm remove-item">Remove</button></td>
                 </tr>
             `;
                 $('#items_table tbody').append(newRow);

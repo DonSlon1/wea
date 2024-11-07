@@ -15,6 +15,7 @@
             'amount',
             'description',
             'pdf_template_id',
+            'contact_id',
         ];
 
         public function pdfTemplate()
@@ -25,5 +26,10 @@
         public function items()
         {
             return $this->hasMany(InvoiceItem::class);
+        }
+
+        public function contact()
+        {
+            return $this->belongsTo(Contact::class);
         }
     }

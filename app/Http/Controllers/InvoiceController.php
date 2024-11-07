@@ -5,8 +5,9 @@
     use App\Models\Invoice;
     use App\Models\InvoiceItem;
     use App\Models\PdfTemplate;
-    use Illuminate\Http\Request;
+    use App\Models\Contact;
     use Barryvdh\DomPDF\Facade\Pdf;
+    use Illuminate\Http\Request;
     use Illuminate\Support\Facades\DB;
     use Illuminate\Support\Facades\Log;
 
@@ -17,7 +18,7 @@
          */
         public function index()
         {
-            $invoices = Invoice::with('pdfTemplate')->paginate(10);
+            $invoices = Invoice::with('pdfTemplate', 'contact')->paginate(10);
             return view('invoices.index', compact('invoices'));
         }
 
@@ -27,7 +28,8 @@
         public function create()
         {
             $pdfTemplates = PdfTemplate::all();
-            return view('invoices.create', compact('pdfTemplates'));
+            $contacts = Contact::all();
+            return view('invoices.create', compact('pdfTemplates', 'contacts'));
         }
 
         /**
@@ -40,6 +42,7 @@
                 'invoice_date' => 'required|date',
                 'description' => 'nullable|string',
                 'pdf_template_id' => 'required|exists:pdf_templates,id',
+                'contact_id' => 'required|exists:contacts,id',
                 'items' => 'required|array|min:1',
                 'items.*.description' => 'required|string',
                 'items.*.quantity' => 'required|integer|min:1',
@@ -55,6 +58,7 @@
                     'invoice_date' => $request->invoice_date,
                     'description' => $request->description,
                     'pdf_template_id' => $request->pdf_template_id,
+                    'contact_id' => $request->contact_id,
                     'amount' => 0,
                 ]);
 
@@ -86,7 +90,8 @@
         public function show(Invoice $invoice)
         {
             $invoice->load('items', 'pdfTemplate');
-            return view('invoices.show', compact('invoice'));
+            $contacts = Contact::all();
+            return view('invoices.show', compact('invoice','contacts'));
         }
 
         /**
@@ -95,8 +100,9 @@
         public function edit(Invoice $invoice)
         {
             $pdfTemplates = PdfTemplate::all();
+            $contacts = Contact::all();
             $invoice->load('items');
-            return view('invoices.edit', compact('invoice', 'pdfTemplates'));
+            return view('invoices.edit', compact('invoice', 'pdfTemplates', 'contacts'));
         }
 
         /**
@@ -107,40 +113,50 @@
             $request->validate([
                 'invoice_number' => 'required|unique:invoices,invoice_number,' . $invoice->id,
                 'invoice_date' => 'required|date',
-                'amount' => 'nullable|numeric', // This will be calculated
                 'description' => 'nullable|string',
                 'pdf_template_id' => 'required|exists:pdf_templates,id',
+                'contact_id' => 'required|exists:contacts,id',
                 'items' => 'required|array|min:1',
                 'items.*.description' => 'required|string',
                 'items.*.quantity' => 'required|integer|min:1',
                 'items.*.unit_price' => 'required|numeric|min:0',
             ]);
 
-            // Update the invoice details
-            $invoice->update([
-                'invoice_number' => $request->invoice_number,
-                'invoice_date' => $request->invoice_date,
-                'description' => $request->description,
-                'pdf_template_id' => $request->pdf_template_id,
-            ]);
+            try {
+                DB::beginTransaction();
 
-            // Delete existing items
-            $invoice->items()->delete();
+                // Update the invoice details
+                $invoice->update([
+                    'invoice_number' => $request->invoice_number,
+                    'invoice_date' => $request->invoice_date,
+                    'description' => $request->description,
+                    'pdf_template_id' => $request->pdf_template_id,
+                    'contact_id' => $request->contact_id,
+                ]);
 
-            // Initialize total amount
-            $totalAmount = 0;
+                // Delete existing items
+                $invoice->items()->delete();
 
-            // Add updated invoice items
-            foreach ($request->items as $itemData) {
-                $item = new InvoiceItem($itemData);
-                $invoice->items()->save($item);
-                $totalAmount += $item->total;
+                $totalAmount = 0;
+
+                // Add updated invoice items
+                foreach ($request->items as $itemData) {
+                    $item = new InvoiceItem($itemData);
+                    $invoice->items()->save($item);
+                    $totalAmount += $item->quantity * $item->unit_price;
+                }
+
+                // Update the total amount in the invoice
+                $invoice->update(['amount' => $totalAmount]);
+
+                DB::commit();
+
+                return redirect()->route('invoices.index')->with('success', 'Invoice updated successfully.');
+            } catch (\Exception $e) {
+                DB::rollBack();
+                Log::error('Error updating invoice: ' . $e->getMessage());
+                return redirect()->back()->with('error', 'Failed to update invoice: ' . $e->getMessage())->withInput();
             }
-
-            // Update the total amount in the invoice
-            $invoice->update(['amount' => $totalAmount]);
-
-            return redirect()->route('invoices.index')->with('success', 'Invoice updated successfully.');
         }
 
         /**
@@ -148,21 +164,13 @@
          */
         public function destroy(Invoice $invoice)
         {
-            $invoice->delete();
-            return redirect()->route('invoices.index')->with('success', 'Invoice deleted successfully.');
-        }
-
-        /**
-         * Download the invoice as PDF.
-         */
-        public function download(Invoice $invoice)
-        {
-            $invoice->load('items', 'pdfTemplate');
-
-            // Generate PDF using the selected template
-            $pdf = Pdf::loadView('invoices.pdf', compact('invoice'));
-
-            return $pdf->download('invoice_' . $invoice->invoice_number . '.pdf');
+            try {
+                $invoice->delete();
+                return redirect()->route('invoices.index')->with('success', 'Invoice deleted successfully.');
+            } catch (\Exception $e) {
+                Log::error('Error deleting invoice: ' . $e->getMessage());
+                return redirect()->back()->with('error', 'Failed to delete invoice: ' . $e->getMessage());
+            }
         }
 
         /**
