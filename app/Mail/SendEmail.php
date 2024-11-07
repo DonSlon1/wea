@@ -4,7 +4,9 @@
 
     use Illuminate\Bus\Queueable;
     use Illuminate\Mail\Mailable;
+    use Illuminate\Mail\Mailables\Attachment;
     use Illuminate\Queue\SerializesModels;
+    use Illuminate\Support\Facades\Log;
 
     class SendEmail extends Mailable
     {
@@ -13,7 +15,7 @@
         public $subjectLine;
         public $htmlBody;
         public $plainBody;
-        public $attachments;
+        public $attachmentsArray;
 
         /**
          * Vytvoří novou instanci Mailable.
@@ -25,7 +27,7 @@
             $this->subjectLine = $subject;
             $this->htmlBody = $htmlBody;
             $this->plainBody = $plainBody;
-            $this->attachments = $attachments;
+            $this->attachmentsArray = $attachments;
         }
 
         /**
@@ -33,24 +35,33 @@
          *
          * @return $this
          */
-        public function build()
+        public function build() : static
         {
             $email = $this->subject($this->subjectLine)
-                ->view('emails.send')
+                ->markdown('emails.send')
+                //->html('emails.send')
                 ->with('body', $this->htmlBody);
 
             // Přidání alternativního textu, pokud je poskytnut
             if ($this->plainBody) {
-                $email->text('emails.send_plain')->with(['altBody' => $this->plainBody]);
+                $email->text('emails.send_plain')->with('altBody', $this->plainBody);
             }
 
             // Přidání příloh
-            foreach ($this->attachments as $attachment) {
+            foreach ($this->attachmentsArray as $attachment) {
+                // Kontrola, zda příloha obsahuje klíče 'path' a 'name'
                 if (isset($attachment['path']) && isset($attachment['name'])) {
-                    $email->attach($attachment['path'], [
-                        'as' => $attachment['name'],
-                        'mime' => mime_content_type($attachment['path']),
-                    ]);
+                    // Kontrola existence souboru
+                    if (file_exists($attachment['path'])) {
+                        $attachment = Attachment::fromPath($attachment['path'])
+                            ->as($attachment['name'])
+                            ->withMime(mime_content_type($attachment['path']));
+                        $email->attach($attachment);
+                    } else {
+                        Log::error('Attachment file does not exist:', ['path' => $attachment['path']]);
+                    }
+                } else {
+                    Log::error('Attachment missing required keys:', ['attachment' => $attachment]);
                 }
             }
 

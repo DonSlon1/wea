@@ -44,34 +44,37 @@
                 'subject' => 'required|string|max:255',
                 'body' => 'required|string',
                 'alt_body' => 'nullable|string',
-                'attachments.*' => 'file|mimes:pdf,doc,docx,jpg,png|max:2048',
+                'attachments.*' => 'file|mimes:pdf,doc,docx,jpg,png',
                 'existing_attachments.*' => 'nullable|string|exists:uploaded_files,path',
             ]);
 
-            // Zpracování nových příloh
             $attachments = [];
             if ($request->hasFile('attachments')) {
                 foreach ($request->file('attachments') as $file) {
-                    // Logování zpracovaného přílohu
-                    Log::info('Processing attachment:', ['name' => $file->getClientOriginalName()]);
+                    // Generování unikátního názvu souboru
+                    $filename = time() . '_' . $file->getClientOriginalName();
 
-                    // Uložení souboru
-                    $path = $file->store('attachments');
+                    // Uložení souboru na disk 'local'
+                    $path = $file->storeAs('attachments', $filename, 'local');
 
-                    // Uložení informace o souboru do databáze
-                    $fileRecord = UploadedFile::create([
-                        'name' => $file->getClientOriginalName(),
-                        'path' => $path,
-                    ]);
+                    if ($path) {
+                        // Uložení informace o souboru do databáze
+                        $fileRecord = UploadedFile::create([
+                            'name' => $file->getClientOriginalName(),
+                            'path' => $path,
+                        ]);
 
-                    // Přidání souboru do pole příloh pro email
-                    $attachments[] = [
-                        'path' => storage_path('app/' . $path),
-                        'name' => $file->getClientOriginalName(),
-                    ];
+                        // Přidání souboru do pole příloh pro email
+                        $attachments[] = [
+                            'path' => Storage::disk('local')->path($path),
+                            'name' => $file->getClientOriginalName(),
+                        ];
 
-                    // Logování cesty a jména přílohy
-                    Log::info('Stored attachment:', ['path' => 'storage/app/' . $path, 'name' => $file->getClientOriginalName()]);
+                        // Logování zpracovaného přílohu
+                        Log::info('Processed attachment:', ['path' => $path, 'name' => $file->getClientOriginalName()]);
+                    } else {
+                        Log::error('Failed to store attachment:', ['originalName' => $file->getClientOriginalName()]);
+                    }
                 }
             } else {
                 Log::info('No new attachments found.');
@@ -82,7 +85,8 @@
                 foreach ($request->input('existing_attachments') as $existingPath) {
                     Log::info('Processing existing attachment: ' . $existingPath);
                     $attachments[] = [
-                        'path' => storage_path('app/' . $existingPath),
+                        //'path' => storage_path('app/' . $existingPath),
+                        'path' => Storage::disk('local')->path($existingPath),
                         'name' => basename($existingPath),
                     ];
                 }
