@@ -3,9 +3,12 @@
     namespace App\Http\Controllers;
 
     use App\Models\Invoice;
+    use App\Models\InvoiceItem;
     use App\Models\PdfTemplate;
     use Illuminate\Http\Request;
     use Barryvdh\DomPDF\Facade\Pdf;
+    use Illuminate\Support\Facades\DB;
+    use Illuminate\Support\Facades\Log;
 
     class InvoiceController extends Controller
     {
@@ -35,14 +38,46 @@
             $request->validate([
                 'invoice_number' => 'required|unique:invoices,invoice_number',
                 'invoice_date' => 'required|date',
-                'amount' => 'required|numeric',
                 'description' => 'nullable|string',
                 'pdf_template_id' => 'required|exists:pdf_templates,id',
+                'items' => 'required|array|min:1',
+                'items.*.description' => 'required|string',
+                'items.*.quantity' => 'required|integer|min:1',
+                'items.*.unit_price' => 'required|numeric|min:0',
             ]);
 
-            Invoice::create($request->all());
+            try {
+                DB::beginTransaction();
 
-            return redirect()->route('invoices.index')->with('success', 'Invoice created successfully.');
+                // Create the invoice with amount = 0 initially
+                $invoice = Invoice::create([
+                    'invoice_number' => $request->invoice_number,
+                    'invoice_date' => $request->invoice_date,
+                    'description' => $request->description,
+                    'pdf_template_id' => $request->pdf_template_id,
+                    'amount' => 0,
+                ]);
+
+                $totalAmount = 0;
+
+                // Create invoice items and calculate total amount
+                foreach ($request->items as $itemData) {
+                    $item = new InvoiceItem($itemData);
+                    $invoice->items()->save($item);
+                    $totalAmount += $item->quantity * $item->unit_price;
+                }
+
+                // Update the invoice amount
+                $invoice->update(['amount' => $totalAmount]);
+
+                DB::commit();
+
+                return redirect()->route('invoices.index')->with('success', 'Invoice created successfully.');
+            } catch (\Exception $e) {
+                DB::rollBack();
+                Log::error('Error creating invoice: ' . $e->getMessage());
+                return redirect()->back()->with('error', 'Failed to create invoice: ' . $e->getMessage())->withInput();
+            }
         }
 
         /**
@@ -50,6 +85,7 @@
          */
         public function show(Invoice $invoice)
         {
+            $invoice->load('items', 'pdfTemplate');
             return view('invoices.show', compact('invoice'));
         }
 
@@ -59,6 +95,7 @@
         public function edit(Invoice $invoice)
         {
             $pdfTemplates = PdfTemplate::all();
+            $invoice->load('items');
             return view('invoices.edit', compact('invoice', 'pdfTemplates'));
         }
 
@@ -70,12 +107,38 @@
             $request->validate([
                 'invoice_number' => 'required|unique:invoices,invoice_number,' . $invoice->id,
                 'invoice_date' => 'required|date',
-                'amount' => 'required|numeric',
+                'amount' => 'nullable|numeric', // This will be calculated
                 'description' => 'nullable|string',
                 'pdf_template_id' => 'required|exists:pdf_templates,id',
+                'items' => 'required|array|min:1',
+                'items.*.description' => 'required|string',
+                'items.*.quantity' => 'required|integer|min:1',
+                'items.*.unit_price' => 'required|numeric|min:0',
             ]);
 
-            $invoice->update($request->all());
+            // Update the invoice details
+            $invoice->update([
+                'invoice_number' => $request->invoice_number,
+                'invoice_date' => $request->invoice_date,
+                'description' => $request->description,
+                'pdf_template_id' => $request->pdf_template_id,
+            ]);
+
+            // Delete existing items
+            $invoice->items()->delete();
+
+            // Initialize total amount
+            $totalAmount = 0;
+
+            // Add updated invoice items
+            foreach ($request->items as $itemData) {
+                $item = new InvoiceItem($itemData);
+                $invoice->items()->save($item);
+                $totalAmount += $item->total;
+            }
+
+            // Update the total amount in the invoice
+            $invoice->update(['amount' => $totalAmount]);
 
             return redirect()->route('invoices.index')->with('success', 'Invoice updated successfully.');
         }
@@ -94,36 +157,11 @@
          */
         public function download(Invoice $invoice)
         {
-            $templateContent = $invoice->pdfTemplate->blade_template;
+            $invoice->load('items', 'pdfTemplate');
 
-            // Use a temporary view to render the Blade template from the database
-            $pdf = Pdf::loadHTML($this->renderBladeTemplate($templateContent, $invoice));
+            // Generate PDF using the selected template
+            $pdf = Pdf::loadView('invoices.pdf', compact('invoice'));
 
             return $pdf->download('invoice_' . $invoice->invoice_number . '.pdf');
-        }
-
-        /**
-         * Render Blade template content from string.
-         */
-        protected function renderBladeTemplate($templateContent, $invoice)
-        {
-            $view = new \Illuminate\View\Factory(
-                app('view.engine.resolver'),
-                app('view.finder'),
-                app('events')
-            );
-
-            $blade = app('blade.compiler');
-
-            // Compile the Blade template content
-            $compiled = $blade->compileString($templateContent);
-
-            // Create a temporary view
-            ob_start();
-            eval('?>' . $compiled);
-            $html = ob_get_clean();
-
-            // Pass the $invoice variable to the template
-            return view()->make('temp', compact('html', 'invoice'))->render();
         }
     }

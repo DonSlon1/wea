@@ -10,7 +10,7 @@
             <tr>
                 <th>Invoice Number</th>
                 <th>Date</th>
-                <th>Amount</th>
+                <th>Amount ($)</th>
                 <th>Template</th>
                 <th>Actions</th>
             </tr>
@@ -20,16 +20,17 @@
                 <tr>
                     <td>{{ $invoice->invoice_number }}</td>
                     <td>{{ $invoice->invoice_date }}</td>
-                    <td>${{ number_format($invoice->amount, 2) }}</td>
+                    <td>{{ number_format($invoice->amount, 2) }}</td>
                     <td>{{ $invoice->pdfTemplate->name }}</td>
                     <td>
                         <a href="{{ route('invoices.show', $invoice) }}" class="btn btn-info btn-sm">View</a>
                         <a href="{{ route('invoices.edit', $invoice) }}" class="btn btn-warning btn-sm">Edit</a>
                         <a href="{{ route('invoices.download', $invoice) }}" class="btn btn-success btn-sm">Download PDF</a>
+                        <a href="{{ route('mail.create', ['invoice_id' => $invoice->id]) }}" class="btn btn-primary btn-sm">Send via Email</a>
                         <form action="{{ route('invoices.destroy', $invoice) }}" method="POST" style="display:inline-block;">
                             @csrf
                             @method('DELETE')
-                            <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Are you sure?')">Delete</button>
+                            <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Are you sure you want to delete this invoice?')">Delete</button>
                         </form>
                     </td>
                 </tr>

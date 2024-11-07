@@ -21,4 +21,9 @@
         {
             return $this->belongsTo(PdfTemplate::class);
         }
+
+        public function items()
+        {
+            return $this->hasMany(InvoiceItem::class);
+        }
     }
