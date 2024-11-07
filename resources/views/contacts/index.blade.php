@@ -1,52 +1,69 @@
+{{-- resources/views/contacts/index.blade.php --}}
 @extends('layouts.app')
 
+@section('title', 'Contacts')
+
 @section('content')
-    <h1>Contacts</h1>
-    <a href="{{ route('contacts.create') }}" class="btn btn-primary mb-3">Add New Contact</a>
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="mb-0">Contacts</h2>
+        <a href="{{ route('contacts.create') }}" class="btn btn-primary"><i class="bi bi-plus-circle"></i> Add New Contact</a>
+    </div>
 
     @if(session('success'))
-        <div class="alert alert-success">
-            {{ session('success') }}
+        <div class="alert alert-success alert-dismissible fade show d-flex align-items-center" role="alert">
+            <i class="bi bi-check-circle-fill me-2"></i>
+            <div>
+                {{ session('success') }}
+            </div>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
     @endif
 
     @if($contacts->count())
-        <table class="table table-bordered">
-            <thead>
-            <tr>
-                <th>Name</th>
-                <th>Email</th>
-                <th>Phone Number</th>
-                <th>Company Name</th>
-                <th>Website</th>
-                <th>Actions</th>
-            </tr>
-            </thead>
-            <tbody>
-            @foreach($contacts as $contact)
-                <tr>
-                    <td>{{ $contact->first_name }} {{ $contact->last_name }}</td>
-                    <td>{{ $contact->email }}</td>
-                    <td>{{ $contact->phone_number }}</td>
-                    <td>{{ $contact->company_name }}</td>
-                    <td>
-                        @if($contact->website)
-                            <a href="{{ $contact->website }}" target="_blank">{{ $contact->website }}</a>
-                        @endif
-                    </td>
-                    <td>
-                        <a href="{{ route('contacts.edit', $contact) }}" class="btn btn-warning btn-sm">Edit</a>
-                        <form action="{{ route('contacts.destroy', $contact) }}" method="POST" style="display:inline-block;">
-                            @csrf
-                            @method('DELETE')
-                            <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Are you sure you want to delete this contact?')">Delete</button>
-                        </form>
-                    </td>
-                </tr>
-            @endforeach
-            </tbody>
-        </table>
+        <div class="card">
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover table-striped mb-0">
+                        <thead class="table-dark">
+                        <tr>
+                            <th>Name</th>
+                            <th>Email</th>
+                            <th>Phone Number</th>
+                            <th>Company Name</th>
+                            <th>Website</th>
+                            <th class="text-center">Actions</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        @foreach($contacts as $contact)
+                            <tr>
+                                <td>{{ $contact->first_name }} {{ $contact->last_name }}</td>
+                                <td>{{ $contact->email }}</td>
+                                <td>{{ $contact->phone_number }}</td>
+                                <td>{{ $contact->company_name }}</td>
+                                <td>
+                                    @if($contact->website)
+                                        <a href="{{ $contact->website }}" target="_blank" rel="noopener noreferrer">{{ $contact->website }}</a>
+                                    @endif
+                                </td>
+                                <td class="text-center">
+                                    <x-contact-action-buttons :contact="$contact" />
+                                </td>
+                            </tr>
+                        @endforeach
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        {{-- Pagination --}}
+        <div class="d-flex justify-content-center mt-3">
+            {{ $contacts->links() }}
+        </div>
     @else
-        <p>No contacts found.</p>
+        <div class="alert alert-warning text-center" role="alert">
+            No contacts found. <a href="{{ route('contacts.create') }}" class="alert-link">Add a new contact now!</a>
+        </div>
     @endif
 @endsection
