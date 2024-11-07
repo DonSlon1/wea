@@ -48,7 +48,7 @@
                                         <p><strong>Přílohy:</strong></p>
                                         <ul>
                                             @foreach($email->attachments as $attachment)
-                                                <li><a href="{{ Storage::url($attachment['path']) }}" target="_blank">{{ $attachment['name'] }}</a></li>
+                                                <li><a href="{{ Illuminate\Support\Facades\Storage::url($attachment['path']) }}" target="_blank">{{ $attachment['name'] }}</a></li>
                                             @endforeach
                                         </ul>
                                     @endif
