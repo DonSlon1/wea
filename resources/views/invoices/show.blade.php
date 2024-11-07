@@ -3,11 +3,15 @@
 @section('content')
     <h1>Invoice: {{ $invoice->invoice_number }}</h1>
 
-    <a href="{{ route('invoices.download', $invoice) }}" class="btn btn-success mb-3">Download PDF</a>
-    <a href="{{ route('invoices.index') }}" class="btn btn-secondary mb-3">Back to Invoices</a>
-    <a href="{{ route('mail.create', ['invoice_id' => $invoice->id]) }}" class="btn btn-primary mb-3">Send Invoice via Email</a>
+    <div class="mb-3">
+        <a href="{{ route('invoices.download', $invoice) }}" class="btn btn-success">Download PDF</a>
+        <a href="{{ route('invoices.preview', $invoice) }}" target="_blank" class="btn btn-info">Open Preview</a>
+        <a href="{{ route('invoices.index') }}" class="btn btn-secondary">Back to Invoices</a>
+        <a href="{{ route('mail.create', ['invoice_id' => $invoice->id]) }}" class="btn btn-primary">Send via Email</a>
+    </div>
 
-    <div class="card">
+    <!-- Invoice Details -->
+    <div class="card mb-4">
         <div class="card-body">
             <p><strong>Invoice Number:</strong> {{ $invoice->invoice_number }}</p>
             <p><strong>Date:</strong> {{ $invoice->invoice_date }}</p>
@@ -17,7 +21,8 @@
         </div>
     </div>
 
-    <h3 class="mt-4">Items</h3>
+    <!-- Invoice Items -->
+    <h3>Items</h3>
     @if($invoice->items->count())
         <table class="table table-bordered">
             <thead>
@@ -38,12 +43,18 @@
                 </tr>
             @endforeach
             <tr>
-                <td colspan="3" style="text-align: right;"><strong>Total:</strong></td>
-                <td><strong>{{ number_format($invoice->amount, 2) }}</strong></td>
+                <td colspan="3" class="text-end"><strong>Total:</strong></td>
+                <td><strong>${{ number_format($invoice->amount, 2) }}</strong></td>
             </tr>
             </tbody>
         </table>
     @else
         <p>No items found for this invoice.</p>
     @endif
+
+    <!-- PDF Preview Section -->
+    <h3 class="mt-5">PDF Preview</h3>
+    <iframe src="{{ route('invoices.preview', $invoice) }}" width="100%" height="700px">
+        Your browser does not support iframes.
+    </iframe>
 @endsection

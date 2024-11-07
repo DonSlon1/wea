@@ -164,4 +164,22 @@
 
             return $pdf->download('invoice_' . $invoice->invoice_number . '.pdf');
         }
+
+        /**
+         * Preview the invoice PDF.
+         *
+         * @param  \App\Models\Invoice  $invoice
+         * @return \Illuminate\Http\Response
+         */
+        public function preview(Invoice $invoice)
+        {
+            // Ensure relationships are loaded
+            $invoice->load('items', 'pdfTemplate');
+
+            // Generate PDF using the selected template
+            $pdf = Pdf::loadView('invoices.pdf', compact('invoice'));
+
+            // Stream the PDF to the browser for preview
+            return $pdf->stream('invoice_' . $invoice->invoice_number . '.pdf');
+        }
     }
