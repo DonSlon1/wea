@@ -101,7 +101,6 @@
 
             // Handle invoice attachment if invoice_id is provided
             if ($request->input('invoice_id')) {
-                dd($request->input('invoice_id'));
                 $invoice = Invoice::find($request->input('invoice_id'));
                 if ($invoice) {
                     // Generate the PDF for the invoice
@@ -120,8 +119,6 @@
                         'name' => 'Invoice_' . $invoice->invoice_number . '.pdf',
                     ];
                 }
-            } else {
-                dd('No invoice_id provided');
             }
 
             // Log the final attachments array
@@ -151,9 +148,9 @@
                 ]);
 
                 // Delete the temporary invoice PDF if it was created
-/*                if ($request->input('invoice_id') && isset($tempPath)) {
+                if ($request->input('invoice_id') && isset($tempPath)) {
                     @unlink($tempPath);
-                }*/
+                }
 
                 Log::info('Email successfully sent and saved to database.');
                 return redirect()->back()->with('success', 'Email byl úspěšně odeslán.');
