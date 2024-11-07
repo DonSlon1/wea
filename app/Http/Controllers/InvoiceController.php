@@ -183,11 +183,49 @@
         {
             // Ensure relationships are loaded
             $invoice->load('items', 'pdfTemplate');
+            $templateContent = $invoice->pdfTemplate->blade_template;
 
             // Generate PDF using the selected template
-            $pdf = Pdf::loadView('invoices.pdf', compact('invoice'));
+            $pdf = Pdf::loadHTML($this->renderBladeTemplate($templateContent, $invoice));
+
 
             // Stream the PDF to the browser for preview
             return $pdf->stream('invoice_' . $invoice->invoice_number . '.pdf');
+        }
+
+        public function download(Invoice $invoice)
+        {
+            $templateContent = $invoice->pdfTemplate->blade_template;
+
+            // Use a temporary view to render the Blade template from the database
+            $pdf = Pdf::loadHTML($this->renderBladeTemplate($templateContent, $invoice));
+
+            return $pdf->download('invoice_' . $invoice->invoice_number . '.pdf');
+        }
+
+        /**
+         * Render Blade template content from string.
+         */
+        protected function renderBladeTemplate($templateContent, $invoice)
+        {
+            // Get the Blade compiler
+            $blade = app('blade.compiler');
+
+            $compiled = $blade->compileString($templateContent);
+
+            $__env = app('view');
+
+            ob_start();
+
+            try {
+                eval('?>' . $compiled);
+            } catch (\Throwable $e) {
+                ob_end_clean(); // Clean buffer if there's an error
+                throw $e; // Re-throw the exception for Laravel to handle
+            }
+
+            $html = ob_get_clean();
+
+            return $html;
         }
     }

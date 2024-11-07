@@ -20,7 +20,7 @@
     Route::get('/statistics', [MailController::class, 'emailStatistics'])->name('mail.statistics');
 
 // Správa kontaktů
-    Route::resource('contacts', ContactController::class)->only(['index', 'create', 'store']);
+    Route::resource('contacts', ContactController::class);
 
 // Invoice Routes
     Route::resource('invoices', InvoiceController::class);
