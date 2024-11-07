@@ -187,8 +187,8 @@
          */
         public function emailStatistics(Request $request)
         {
-            $startDate = $request->input('start_date', now()->subMonth()->toDateString());
-            $endDate = $request->input('end_date', now()->toDateString());
+            $startDate = $request->input('start_date', now()->addDays(-10)->toDateString());
+            $endDate = $request->input('end_date', now()->addDay(10)->toDateString());
 
             $statistics = SentEmail::whereBetween('created_at', [$startDate, $endDate])
                 ->selectRaw('DATE(created_at) as date, COUNT(*) as count')
