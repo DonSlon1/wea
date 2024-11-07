@@ -10,7 +10,7 @@
         <i class="bi bi-pencil-square"></i>
     </a>
 
-    {{-- Delete Button with Modal --}}
+    {{-- Delete Button with Modal Confirmation --}}
     <button type="button" class="btn btn-danger btn-sm" data-bs-toggle="modal" data-bs-target="#deleteModal{{ $template->id }}" title="Delete">
         <i class="bi bi-trash-fill"></i>
     </button>
@@ -29,7 +29,7 @@
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                <form action="{{ route('pdf-templates.destroy', $template) }}" method="POST" class="d-inline">
+                <form action="{{ route('pdf-templates.destroy', $template) }}" method="POST">
                     @csrf
                     @method('DELETE')
                     <button type="submit" class="btn btn-danger">Delete</button>

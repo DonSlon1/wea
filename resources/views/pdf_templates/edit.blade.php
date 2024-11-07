@@ -61,16 +61,24 @@
                 width: '100%'
             });
 
-            // Initialize CodeMirror for Blade Template
+            // Initialize CodeMirror for blade_template
             var editor = CodeMirror.fromTextArea(document.getElementById("blade_template"), {
                 mode: "htmlmixed",
                 theme: "monokai",
                 lineNumbers: true,
-                lineWrapping: true
+                lineWrapping: true,
+                extraKeys: {"Ctrl-Space": "autocomplete"},
+                hint: CodeMirror.hint.anyword
             });
 
-            // Adjust the textarea's height based on CodeMirror's height
-            editor.setSize("100%", "400px");
+            editor.on("inputRead", function(cm, change) {
+                if (change.text[0] === '@') {
+                    cm.showHint({
+                        hint: CodeMirror.hint.blade,
+                        completeSingle: false
+                    });
+                }
+            });
         });
     </script>
 @endpush
