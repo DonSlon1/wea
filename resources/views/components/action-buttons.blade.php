@@ -1,17 +1,20 @@
+@php
+use Illuminate\Support\Str;
+@endphp
 {{-- resources/views/components/action-buttons.blade.php --}}
 <div class="btn-group" role="group" aria-label="Action Buttons">
     {{-- View Button --}}
-    <a href="{{ route('pdf-templates.show', $template) }}" class="btn btn-info btn-sm me-1" title="View">
+    <a href="{{ route('pdf-templates.show', $template) }}" class="btn btn-info btn-sm me-1" title="View Template">
         <i class="bi bi-eye-fill"></i>
     </a>
 
     {{-- Edit Button --}}
-    <a href="{{ route('pdf-templates.edit', $template) }}" class="btn btn-warning btn-sm me-1" title="Edit">
+    <a href="{{ route('pdf-templates.edit', $template) }}" class="btn btn-warning btn-sm me-1" title="Edit Template">
         <i class="bi bi-pencil-square"></i>
     </a>
 
     {{-- Delete Button with Modal Confirmation --}}
-    <button type="button" class="btn btn-danger btn-sm" data-bs-toggle="modal" data-bs-target="#deleteModal{{ $template->id }}" title="Delete">
+    <button type="button" class="btn btn-danger btn-sm" data-bs-toggle="modal" data-bs-target="#deleteModal{{ $template->id }}" title="Delete Template">
         <i class="bi bi-trash-fill"></i>
     </button>
 </div>
@@ -25,7 +28,7 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                Are you sure you want to delete the template "<strong>{{ $template->name }}</strong>"?
+                Are you sure you want to delete the PDF Template "<strong>{{ $template->name }}</strong>"?
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>

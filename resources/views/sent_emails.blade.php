@@ -1,69 +1,62 @@
+{{-- resources/views/mail/sent-emails.blade.php --}}
+
+@php
+    use Illuminate\Support\Facades\Storage;
+    use Illuminate\Support\Str;
+@endphp
 @extends('layouts.app')
 
+@section('title', 'Sent Emails')
+
 @section('content')
-    <h1>Odeslané Emaily</h1>
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h2 class="mb-0">Sent Emails</h2>
+            {{-- Future enhancements: Add filters or search functionality here --}}
+        </div>
+        <div class="card-body">
+            @if($sentEmails->count())
+                <div class="table-responsive">
+                    <table class="table table-hover table-striped align-middle">
+                        <thead class="table-dark">
+                        <tr>
+                            <th>ID</th>
+                            <th>Recipients</th>
+                            <th>Subject</th>
+                            <th>Sent At</th>
+                            <th class="text-center">Actions</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        @foreach($sentEmails as $email)
+                            <tr>
+                                <td>{{ $email->id }}</td>
+                                <td>
+                                    @foreach($email->recipients as $recipient)
+                                        {{ $recipient }}@if (!$loop->last), @endif
+                                    @endforeach
+                                </td>
+                                <td>{{ Str::limit($email->subject, 50) }}</td>
+                                <td>{{ $email->created_at->format('d.m.Y H:i') }}</td>
+                                <td class="text-center">
+                                    <!-- View Button triggers the email-detail-modal component -->
+                                    <x-email-detail-modal :email="$email" />
+                                </td>
+                            </tr>
+                        @endforeach
+                        </tbody>
+                    </table>
+                </div>
 
-    <table class="table table-bordered">
-        <thead>
-        <tr>
-            <th>ID</th>
-            <th>Příjemci</th>
-            <th>Předmět</th>
-            <th>Datum odeslání</th>
-            <th>Akce</th>
-        </tr>
-        </thead>
-        <tbody>
-        @foreach($sentEmails as $email)
-            <tr>
-                <td>{{ $email->id }}</td>
-                <td>
-                    @foreach($email->recipients as $recipient)
-                        {{ $recipient }}@if (!$loop->last), @endif
-                    @endforeach
-                </td>
-                <td>{{ $email->subject }}</td>
-                <td>{{ $email->created_at->format('d.m.Y H:i') }}</td>
-                <td>
-                    <button class="btn btn-sm btn-info" data-bs-toggle="modal" data-bs-target="#emailModal{{ $email->id }}">Zobrazit</button>
-
-                    <!-- Modal -->
-                    <div class="modal fade" id="emailModal{{ $email->id }}" tabindex="-1" aria-labelledby="emailModalLabel{{ $email->id }}" aria-hidden="true">
-                        <div class="modal-dialog modal-lg">
-                            <div class="modal-content">
-                                <div class="modal-header">
-                                    <h5 class="modal-title" id="emailModalLabel{{ $email->id }}">Detail Emailu</h5>
-                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                                </div>
-                                <div class="modal-body">
-                                    <p><strong>Příjemci:</strong> {{ implode(', ', $email->recipients) }}</p>
-                                    <p><strong>Předmět:</strong> {{ $email->subject }}</p>
-                                    <p><strong>Text zprávy:</strong></p>
-                                    <div>{!! $email->body !!}</div>
-                                    @if($email->alt_body)
-                                        <p><strong>Alternativní text:</strong></p>
-                                        <div>{{ $email->alt_body }}</div>
-                                    @endif
-                                    @if($email->attachments)
-                                        <p><strong>Přílohy:</strong></p>
-                                        <ul>
-                                            @foreach($email->attachments as $attachment)
-                                                <li><a href="{{ Illuminate\Support\Facades\Storage::url($attachment['path']) }}" target="_blank">{{ $attachment['name'] }}</a></li>
-                                            @endforeach
-                                        </ul>
-                                    @endif
-                                </div>
-                                <div class="modal-footer">
-                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Zavřít</button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </td>
-            </tr>
-        @endforeach
-        </tbody>
-    </table>
-
-    {{ $sentEmails->links() }}
+                {{-- Pagination --}}
+                <div class="d-flex justify-content-center mt-3">
+                    {{ $sentEmails->links() }}
+                </div>
+            @else
+                <div class="alert alert-warning text-center" role="alert">
+                    No sent emails found.
+                </div>
+            @endif
+        </div>
+    </div>
 @endsection
