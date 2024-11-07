@@ -1,9 +1,10 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>{{ $subject }}</title>
+    <meta charset="utf-8">
+    <title>{{ $subjectLine }}</title>
 </head>
 <body>
-{!! $body !!}
+{!! $htmlBody !!}
 </body>
 </html>
