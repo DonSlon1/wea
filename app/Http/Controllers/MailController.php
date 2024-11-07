@@ -28,7 +28,10 @@
                 $invoice = Invoice::findOrFail($request->input('invoice_id'));
             }
 
-            return view('send_email', compact('contacts', 'uploadedFiles', 'invoice'));
+            // Fetch all invoices to allow selection when not sending from a specific invoice
+            $invoices = Invoice::all();
+
+            return view('send_email', compact('contacts', 'uploadedFiles', 'invoice', 'invoices'));
         }
 
         /**
@@ -52,6 +55,7 @@
                 'attachments.*' => 'file|mimes:pdf,doc,docx,jpg,png',
                 'existing_attachments.*' => 'nullable|string|exists:uploaded_files,path',
                 'invoice_id' => 'nullable|exists:invoices,id',
+                'remove_after_send' => 'sometimes|boolean',
             ]);
 
             $attachments = [];
@@ -107,11 +111,10 @@
                     $pdf = Pdf::loadView('invoices.pdf', compact('invoice'));
 
                     // Define a temporary path to save the PDF
-                    $tempPath = storage_path('temp_invoice_' . $invoice->id . '.pdf');
+                    $tempPath = storage_path('app/temp_invoice_' . $invoice->id . '.pdf');
 
                     // Save the PDF to the temporary path
                     $pdf->save($tempPath);
-                    $pdf->save(Storage::disk('local')->path('attachments/invoice_' . $invoice->invoice_number . '.pdf'));
 
                     // Add the invoice PDF to the attachments
                     $attachments[] = [
@@ -150,6 +153,12 @@
                 // Delete the temporary invoice PDF if it was created
                 if ($request->input('invoice_id') && isset($tempPath)) {
                     @unlink($tempPath);
+                }
+
+                // Remove the invoice after sending if the checkbox was selected
+                if ($request->input('invoice_id') && $request->input('remove_after_send')) {
+                    $invoice->delete();
+                    Log::info('Invoice deleted after sending email.', ['invoice_id' => $invoice->id]);
                 }
 
                 Log::info('Email successfully sent and saved to database.');
