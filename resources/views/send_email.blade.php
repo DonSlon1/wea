@@ -1,17 +1,26 @@
 @extends('layouts.app')
 
 @section('content')
-    <h1>Odeslat Email</h1>
+    <h1>Send Email</h1>
 
     <form action="{{ route('mail.send') }}" method="POST" enctype="multipart/form-data">
         @csrf
 
-        {{-- Výběr příjemců --}}
+        @if($invoice)
+            <input type="hidden" name="invoice_id" value="{{ $invoice->id }}">
+            <div class="mb-3">
+                <label class="form-label">Invoice:</label>
+                <p><strong>{{ $invoice->invoice_number }}</strong> - {{ $invoice->description }}</p>
+            </div>
+        @endif
+
         <div class="mb-3">
-            <label for="recipients" class="form-label">Příjemci:</label>
-            <select name="recipients[]" id="recipients" class="form-select" multiple="multiple" style="width: 100%;">
+            <label for="recipients" class="form-label">Recipients</label>
+            <select name="recipients[]" id="recipients" class="form-control select2" multiple required>
                 @foreach($contacts as $contact)
-                    <option value="{{ $contact->email }}">{{ $contact->first_name }} {{ $contact->last_name }} ({{ $contact->email }})</option>
+                    <option value="{{ $contact->email }}" {{ (collect(old('recipients'))->contains($contact->email)) ? 'selected' : '' }}>
+                        {{ $contact->first_name }} {{ $contact->last_name }} ({{ $contact->email }})
+                    </option>
                 @endforeach
             </select>
             @error('recipients')
@@ -19,56 +28,50 @@
             @enderror
         </div>
 
-        {{-- Předmět --}}
         <div class="mb-3">
-            <label for="subject" class="form-label">Předmět:</label>
-            <input type="text" name="subject" id="subject" class="form-control" value="{{ old('subject') }}" required>
+            <label for="subject" class="form-label">Subject</label>
+            <input type="text" name="subject" class="form-control" id="subject" value="{{ old('subject') }}" required>
             @error('subject')
             <div class="text-danger">{{ $message }}</div>
             @enderror
         </div>
 
-        {{-- Tělo zprávy --}}
         <div class="mb-3">
-            <label for="body" class="form-label">Text zprávy:</label>
-            <textarea name="body" id="body" class="form-control" rows="10">{{ old('body') }}</textarea>
+            <label for="body" class="form-label">Body</label>
+            <textarea name="body" class="form-control summernote" id="body" required>{{ old('body') }}</textarea>
             @error('body')
             <div class="text-danger">{{ $message }}</div>
             @enderror
         </div>
 
-        {{-- Alternativní text --}}
         <div class="mb-3">
-            <label for="alt_body" class="form-label">Alternativní text (nepovinné):</label>
-            <textarea name="alt_body" id="alt_body" class="form-control" rows="5">{{ old('alt_body') }}</textarea>
+            <label for="alt_body" class="form-label">Alt Body (optional)</label>
+            <textarea name="alt_body" class="form-control" id="alt_body">{{ old('alt_body') }}</textarea>
             @error('alt_body')
             <div class="text-danger">{{ $message }}</div>
             @enderror
         </div>
 
-        {{-- Přílohy nahrané z počítače --}}
-        <div class="mb-3">
-            <label for="attachments" class="form-label">Přílohy (nepovinné):</label>
-            <input type="file" name="attachments[]" id="attachments" class="form-control" multiple>
-            @error('attachments')
-            <div class="text-danger">{{ $message }}</div>
-            @enderror
-        </div>
+        @if(!$invoice)
+            <div class="mb-3">
+                <label for="attachments" class="form-label">Attachments</label>
+                <input type="file" name="attachments[]" class="form-control" id="attachments" multiple>
+                @error('attachments.*')
+                <div class="text-danger">{{ $message }}</div>
+                @enderror
+            </div>
 
-        {{-- Výběr z existujících příloh --}}
-        <div class="mb-3">
-            <label for="existing_attachments" class="form-label">Vybrat z již nahraných příloh (nepovinné):</label>
-            <select name="existing_attachments[]" id="existing_attachments" class="form-select" multiple="multiple" style="width: 100%;">
-                @foreach($uploadedFiles as $file)
-                    <option value="{{ $file->path }}">{{ $file->name }}</option>
-                @endforeach
-            </select>
-            @error('existing_attachments')
-            <div class="text-danger">{{ $message }}</div>
-            @enderror
-        </div>
+            <div class="mb-3">
+                <label for="existing_attachments" class="form-label">Existing Attachments</label>
+                <select name="existing_attachments[]" id="existing_attachments" class="form-control select2" multiple>
+                    @foreach($uploadedFiles as $file)
+                        <option value="{{ $file->path }}">{{ $file->name }}</option>
+                    @endforeach
+                </select>
+            </div>
+        @endif
 
-        <button type="submit" class="btn btn-primary">Odeslat</button>
+        <button type="submit" class="btn btn-primary">Send Email</button>
     </form>
 @endsection
 
