@@ -1,43 +1,50 @@
 {{-- resources/views/layouts/app.blade.php --}}
     <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Email Sender</title>
-    <meta charset="utf-8">
+    <meta charset="UTF-8">
+    <title>@yield('title', 'Invoice Manager')</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <!-- Bootstrap CSS (optional for better styling) -->
+    <!-- Bootstrap 5 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- Summernote (Rich Text Editor) -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/summernote/0.9.1/summernote-bs4.min.css" integrity="sha512-rDHV59PgRefDUbMm2lSjvf0ZhXZy3wgROFyao0JxZPGho3oOuWejq/ELx0FOZJpgaE5QovVtRN65Y3rrb7JhdQ==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
     <!-- Select2 CSS -->
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.1.0-rc.0/css/select2.min.css" rel="stylesheet" />
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
     <!-- Custom CSS -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism.min.css" rel="stylesheet" />
     <style>
-        /* Custom styles can be added here */
         body {
             background-color: #f8f9fa;
         }
-
-        .card-header {
-            background-color: #ffffff;
-            border-bottom: none;
-        }
-
-        .card {
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        }
-
         .navbar-brand {
             font-weight: bold;
         }
+        .card {
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .select2-container .select2-selection--single {
+            height: 38px; /* Match Bootstrap's input height */
+        }
+        .select2-container--default .select2-selection--single .select2-selection__rendered {
+            line-height: 38px;
+        }
+        .select2-container--default .select2-selection--single .select2-selection__arrow {
+            height: 38px;
+        }
     </style>
+    <!-- CodeMirror CSS -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/codemirror.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/theme/monokai.min.css">
+
     @stack('styles')
 </head>
 <body>
 <div class="container mt-4">
+    {{-- Navigation Bar --}}
     <nav class="navbar navbar-expand-lg navbar-light bg-light mb-4">
         <div class="container-fluid">
-            <a class="navbar-brand" href="{{ route('invoices.index') }}">PDF Manager</a>
+            <a class="navbar-brand" href="{{ route('invoices.index') }}">Invoice Manager</a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
                     aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
                 <span class="navbar-toggler-icon"></span>
@@ -50,15 +57,15 @@
                             Email Management
                         </a>
                         <ul class="dropdown-menu" aria-labelledby="emailDropdown">
-                            <li><a class="dropdown-item" href="{{ route('mail.create') }}">Odeslat Email</a></li>
-                            <li><a class="dropdown-item" href="{{ route('mail.sentEmails') }}">Odeslané Emaily</a></li>
-                            <li><a class="dropdown-item" href="{{ route('mail.statistics') }}">Statistika</a></li>
+                            <li><a class="dropdown-item" href="{{ route('mail.create') }}">Send Email</a></li>
+                            <li><a class="dropdown-item" href="{{ route('mail.sentEmails') }}">Sent Emails</a></li>
+                            <li><a class="dropdown-item" href="{{ route('mail.statistics') }}">Statistics</a></li>
                         </ul>
                     </li>
 
-                    {{-- Contacts Dropdown --}}
+                    {{-- Contacts Link --}}
                     <li class="nav-item">
-                        <a class="nav-link @if(request()->routeIs('contacts.*')) active @endif" href="{{ route('contacts.index') }}">Kontakty</a>
+                        <a class="nav-link @if(request()->routeIs('contacts.*')) active @endif" href="{{ route('contacts.index') }}">Contacts</a>
                     </li>
 
                     {{-- Invoices Dropdown --}}
@@ -89,15 +96,21 @@
 
     {{-- Flash Messages --}}
     @if(session('success'))
-        <div class="alert alert-success alert-dismissible fade show" role="alert">
-            {{ session('success') }}
+        <div class="alert alert-success alert-dismissible fade show d-flex align-items-center" role="alert">
+            <i class="bi bi-check-circle-fill me-2"></i>
+            <div>
+                {{ session('success') }}
+            </div>
             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
     @endif
 
     @if(session('error'))
-        <div class="alert alert-danger alert-dismissible fade show" role="alert">
-            {{ session('error') }}
+        <div class="alert alert-danger alert-dismissible fade show d-flex align-items-center" role="alert">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+            <div>
+                {{ session('error') }}
+            </div>
             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
     @endif
@@ -106,16 +119,25 @@
     @yield('content')
 </div>
 
-{{-- jQuery (required for Select2 and other plugins) --}}
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-<!-- Bootstrap JS Bundle (includes Popper) -->
+{{-- Bootstrap 5 JS Bundle (includes Popper) --}}
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-<!-- Summernote JS -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/summernote/0.9.1/summernote.min.js" integrity="sha512-07bR+AJ2enmNU5RDrZkqMfVq06mQHgFxcmWN/hNSNY4E5SgYNOmTVqo/HCzrSxBhWU8mx3WB3ZJOixA9cRnCdA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-<!-- Select2 JS -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.1.0-rc.0/js/select2.min.js"></script>
-<!-- Chart.js -->
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+{{-- jQuery (for Select2) --}}
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+{{-- Select2 JS --}}
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+<!-- CodeMirror JS -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/codemirror.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/mode/htmlmixed/htmlmixed.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/mode/xml/xml.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/mode/javascript/javascript.min.js"></script>
+
+<!-- Prism JS -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-markup.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-css.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-clike.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-javascript.min.js"></script>
+
 @stack('scripts')
 </body>
 </html>
