@@ -1,8 +1,11 @@
 <?php
 
+    use App\Http\Controllers\InvoiceController;
+    use App\Http\Controllers\PdfTemplateController;
     use Illuminate\Support\Facades\Route;
     use App\Http\Controllers\MailController;
     use App\Http\Controllers\ContactController;
+    use App\Http\Controllers\PdfController;
 
     /*
     |--------------------------------------------------------------------------
@@ -18,3 +21,12 @@
 
 // Správa kontaktů
     Route::resource('contacts', ContactController::class)->only(['index', 'create', 'store']);
+
+// Invoice Routes
+    Route::resource('invoices', InvoiceController::class);
+
+// PDF Template Routes
+    Route::resource('pdf-templates', PdfTemplateController::class);
+
+// Route to download PDF
+    Route::get('invoices/{invoice}/download', [InvoiceController::class, 'download'])->name('invoices.download');

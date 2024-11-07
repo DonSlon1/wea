@@ -123,4 +123,8 @@ return [
         'store' => env('APP_MAINTENANCE_STORE', 'database'),
     ],
 
+    'aliases' => [
+        // Other aliases
+        'PDF' => Barryvdh\DomPDF\Facade::class,
+    ],
 ];
