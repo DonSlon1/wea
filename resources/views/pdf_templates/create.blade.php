@@ -36,9 +36,6 @@
                               rows="12"
                               required
                               placeholder="Enter Blade template content">{{ old('blade_template') }}</textarea>
-                    @error('blade_template')
-                    <div class="invalid-feedback">{{ $message }}</div>
-                    @enderror
                     <div class="form-text">
                         Use Blade syntax. Variables you can use: <code>$invoice</code>.
                     </div>
@@ -61,6 +58,7 @@
             });
 
             // Initialize CodeMirror for blade_template
+/*
             var editor = CodeMirror.fromTextArea(document.getElementById("blade_template"), {
                 mode: "htmlmixed",
                 theme: "monokai",
@@ -79,6 +77,7 @@
                     });
                 }
             });
+*/
         });
     </script>
 @endpush
